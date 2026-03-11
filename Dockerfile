@@ -19,10 +19,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
 # Expose the application port
-EXPOSE 3000
+EXPOSE 3333
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production
+ENV PORT=3333
 
 # Start the server
 CMD ["node", "src/server.js"]

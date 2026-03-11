@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-app
+  namespace: student-app
+  labels:
+    app: student-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: student-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: student-app
+    spec:
+      containers:
+        - name: student-app
+          image: student-app:latest
+          # IMPORTANT: 'Never' tells K8s to use the local image built inside
+          # Minikube's Docker daemon. Do NOT change to IfNotPresent/Always
+          # unless you are pushing to a real registry (e.g. Docker Hub).
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3333
+              name: http
+          envFrom:
+            - configMapRef:
+                name: student-app-config
+          # Liveness probe — restarts the pod if the app hangs
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3333
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          # Readiness probe — removes pod from Service until it is ready
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3333
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
