@@ -314,6 +314,49 @@ On your phone/other device, use your Windows LAN IP:
 
 ---
 
+## 🛠️ Jenkins CI/CD Setup
+
+The project includes a `Jenkinsfile` for automated deployments.
+
+### Prerequisites in Jenkins:
+1.  **Plugins**: Install `Docker Pipeline` and `Config File Provider` plugins.
+2.  **Credentials**:
+    -   `docker-hub-credentials`: Add your Docker Hub username/password.
+    -   `kubeconfig`: Use "Config File Provider" to upload your `~/.kube/config` file.
+3.  **kubectl**: Ensure the Jenkins agent has `kubectl` installed and `docker` daemon access.
+
+### Creating the Job:
+1.  Create a "Pipeline" job in Jenkins.
+2.  Select "Pipeline script from SCM".
+3.  Point to your Git repository and set the script path to `Jenkinsfile`.
+4.  Save and "Build Now"!
+
+---
+
+## 🔧 Useful kubectl Commands
+
+```powershell
+# Watch pods in real time
+kubectl get pods -n student-app -w
+
+# Describe a pod (useful for debugging)
+kubectl describe pod -n student-app <pod-name>
+
+# Scale up/down replicas
+kubectl scale deployment student-app --replicas=3 -n student-app
+
+# Rolling restart (e.g., after ConfigMap update)
+kubectl rollout restart deployment/student-app -n student-app
+
+# Rollout status
+kubectl rollout status deployment/student-app -n student-app
+
+# Tear everything down
+kubectl delete -f k8s/
+```
+
+---
+
 ## ⚙️ Environment Variables
 
 | Variable          | Default     | Description                            |
