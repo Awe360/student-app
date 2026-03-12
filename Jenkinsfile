@@ -3,64 +3,72 @@ pipeline {
 
     environment {
         // --- CONFIGURATION ---
-        DOCKER_REGISTRY = "docker.io" // Change this if using private registry
-        DOCKER_IMAGE    = "awoke/student-app" // Change to your docker image name
-        IMAGE_TAG       = "${env.BUILD_NUMBER}"
-        NAMESPACE       = "student-app"
-        KUBECONFIG_CREDENTIAL_ID = "kubeconfig" // Jenkins credential ID for your Kubeconfig file
-        DOCKER_HUB_CREDENTIAL_ID = "dockerhub-credentials" // Jenkins credential ID for Docker Hub
-    }
-
-    tools {
-        nodejs 'node' // This name must match what you configure in "Global Tool Configuration"
+        DOCKER_REGISTRY          = "docker.io"                  // or your private registry
+        DOCKER_IMAGE             = "awoke/student-app"          // your Docker Hub image
+        IMAGE_TAG                = "${env.BUILD_NUMBER}"
+        NAMESPACE                = "student-app"
+        KUBECONFIG_CREDENTIAL_ID = "kubeconfig"                 // your Secret file credential ID
+        DOCKER_HUB_CREDENTIAL_ID = "dockerhub-credentials"      // your Docker Hub username/password credential
     }
 
     stages {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
-                sh 'npm install'
+                nodejs(nodeJSInstallationName: 'node') {   // ← exact name from your config ("node")
+                    sh 'npm ci'                            // 'ci' preferred in CI for reproducible installs
+                }
             }
         }
 
         stage('Build & Test') {
             steps {
-                echo 'Running build/lint (placeholder)...'
-                // sh 'npm run lint'
-                // sh 'npm test'
+                echo 'Running build/lint/test (placeholder)...'
+                nodejs(nodeJSInstallationName: 'node') {
+                    // Adjust to your actual scripts in package.json
+                    sh 'npm run build'     // example - uncomment/change as needed
+                    // sh 'npm run lint'
+                    // sh 'npm test'
+                }
             }
         }
 
         stage('Docker Build & Push') {
             steps {
                 script {
-                    echo "Building Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    echo "Building & pushing Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
                     docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_HUB_CREDENTIAL_ID) {
                         def customImage = docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
-                        customImage.push()
-                        customImage.push("latest")
+                        customImage.push()          // push the build number tag
+                        customImage.push("latest")  // optional: update :latest
                     }
                 }
             }
         }
 
-   stage('Deploy to Kubernetes') {
-    steps {
-        script {
-            echo "Deploying to Kubernetes namespace: ${NAMESPACE}"
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    echo "Deploying to Kubernetes namespace: ${NAMESPACE}"
 
-            // Use the kubeconfig mounted inside the Jenkins container
-            sh """
-                export KUBECONFIG=/root/.kube/config
-                kubectl --insecure-skip-tls-verify=true set image deployment/student-app \
-                    student-app=${DOCKER_IMAGE}:${IMAGE_TAG} -n ${NAMESPACE}
-                kubectl --insecure-skip-tls-verify=true apply -f k8s/ -n ${NAMESPACE}
-                kubectl --insecure-skip-tls-verify=true rollout status deployment/student-app -n ${NAMESPACE}
-            """
+                    withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
+                        sh """
+                            # No need for manual export KUBECONFIG – the credential binding handles it
+                            # Avoid --insecure-skip-tls-verify in production (your token-based config should work without it)
+
+                            kubectl set image deployment/student-app \
+                                student-app=${DOCKER_IMAGE}:${IMAGE_TAG} -n ${NAMESPACE}
+
+                            kubectl apply -f k8s/ -n ${NAMESPACE}   # assumes manifests in k8s/ folder
+
+                            kubectl rollout status deployment/student-app \
+                                -n ${NAMESPACE} \
+                                --timeout=120s
+                        """
+                    }
+                }
+            }
         }
-    }
-}
-
     }
 
     post {
@@ -69,6 +77,10 @@ pipeline {
         }
         failure {
             echo "❌ Build or Deployment failed. Check the logs."
+        }
+        always {
+            // Optional cleanup: remove temporary Docker images on the agent
+            sh 'docker system prune -f || true'
         }
     }
 }
