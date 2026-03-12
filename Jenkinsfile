@@ -40,25 +40,23 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    echo "Deploying to Kubernetes namespace: ${NAMESPACE}"
-                    
-                    // Use the withKubeConfig plugin or manually point to kubeconfig
-                    configFileProvider([configFile(fileId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                        // Update the deployment image to the new tag
-                        sh "kubectl set image deployment/student-app student-app=${DOCKER_IMAGE}:${IMAGE_TAG} -n ${NAMESPACE}"
-                        
-                        // Apply any other changes in k8s/ directory
-                        sh "kubectl apply -f k8s/ -n ${NAMESPACE}"
-                        
-                        // Check rollout status
-                        sh "kubectl rollout status deployment/student-app -n ${NAMESPACE}"
-                    }
-                }
-            }
+   stage('Deploy to Kubernetes') {
+    steps {
+        script {
+            echo "Deploying to Kubernetes namespace: ${NAMESPACE}"
+
+            // Use the kubeconfig mounted inside the Jenkins container
+            sh """
+                export KUBECONFIG=/root/.kube/config
+                kubectl --insecure-skip-tls-verify=true set image deployment/student-app \
+                    student-app=${DOCKER_IMAGE}:${IMAGE_TAG} -n ${NAMESPACE}
+                kubectl --insecure-skip-tls-verify=true apply -f k8s/ -n ${NAMESPACE}
+                kubectl --insecure-skip-tls-verify=true rollout status deployment/student-app -n ${NAMESPACE}
+            """
         }
+    }
+}
+
     }
 
     post {
