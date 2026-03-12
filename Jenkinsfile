@@ -11,14 +11,12 @@ pipeline {
         DOCKER_HUB_CREDENTIAL_ID = "docker-hub-credentials" // Jenkins credential ID for Docker Hub
     }
 
+    tools {
+        nodejs 'node' // This name must match what you configure in "Global Tool Configuration"
+    }
+
     stages {
         stage('Install Dependencies') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 echo 'Installing dependencies...'
                 sh 'npm install'
@@ -26,12 +24,6 @@ pipeline {
         }
 
         stage('Build & Test') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 echo 'Running build/lint (placeholder)...'
                 // sh 'npm run lint'
