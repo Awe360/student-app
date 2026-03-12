@@ -8,7 +8,7 @@ pipeline {
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
         NAMESPACE       = "student-app"
         KUBECONFIG_CREDENTIAL_ID = "kubeconfig" // Jenkins credential ID for your Kubeconfig file
-        DOCKER_HUB_CREDENTIAL_ID = "docker-hub-credentials" // Jenkins credential ID for Docker Hub
+        DOCKER_HUB_CREDENTIAL_ID = "dockerhub-credentials" // Jenkins credential ID for Docker Hub
     }
 
     tools {
