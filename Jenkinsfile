@@ -9,7 +9,7 @@ pipeline {
         KUBECONFIG_CREDENTIAL_ID = "minikube-kubeconfig"
         DOCKER_HUB_CREDENTIAL_ID = "dockerhub-credentials"
     }
-
+//kdfnvjkfnvjfknv
     stages {
         stage('Install Dependencies') {
             steps {
