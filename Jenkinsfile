@@ -6,7 +6,7 @@ pipeline {
         DOCKER_IMAGE             = "awoke/student-app"
         IMAGE_TAG                = "${env.BUILD_NUMBER}"
         NAMESPACE                = "student-app"
-        KUBECONFIG_CREDENTIAL_ID = "kubeconfig"
+        KUBECONFIG_CREDENTIAL_ID = "minikube-kubeconfig"
         DOCKER_HUB_CREDENTIAL_ID = "dockerhub-credentials"
     }
 
