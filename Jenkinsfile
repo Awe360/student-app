@@ -35,18 +35,18 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    echo "Building & pushing Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                    docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_HUB_CREDENTIAL_ID) {
-                        def customImage = docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
-                        customImage.push()
-                        customImage.push("latest")
-                    }
-                }
+   stage('Docker Build & Push') {
+    steps {
+        script {
+            echo "Building & pushing Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+            docker.withRegistry('https://index.docker.io/v1/', DOCKER_HUB_CREDENTIAL_ID) {
+                def customImage = docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
+                customImage.push()          // pushes :${BUILD_NUMBER}
+                customImage.push('latest')  // also pushes :latest
             }
         }
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
